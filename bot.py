@@ -13,6 +13,7 @@ admin = int(os.getenv('ADMIN'))
 async def on_ready():
 	print('Rice is ready.')
 	print(f'System time: {time.ctime()}')
+	await bot.load_extension(f'cogs.check')
 
 @bot.event
 async def on_message(message):
