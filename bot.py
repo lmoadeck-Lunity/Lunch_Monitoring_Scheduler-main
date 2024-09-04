@@ -1,12 +1,15 @@
 import discord, time, os, asyncio, traceback
 from discord.ext import commands
 from dotenv import load_dotenv
+import datetime
 
 # load_dotenv('./Stepfordle/.env')
 load_dotenv()
 
-intents = discord.Intents.default()
-bot = commands.Bot(command_prefix=';', intents=intents)
+defIntents = discord.Intents.default()
+defIntents.members = True
+defIntents.message_content = True
+bot = commands.Bot(command_prefix=';', intents=defIntents)
 admin = int(os.getenv('ADMIN'))
 
 @bot.event
@@ -18,6 +21,7 @@ async def on_ready():
 @bot.event
 async def on_message(message):
 	await bot.process_commands(message)
+	print(f'{message.author} sent a message at {time.ctime()}: {message.content}')
 
 @bot.command()
 async def cog_load(ctx, cog_name = None):
@@ -99,7 +103,11 @@ async def smsync(ctx):
 		traceback.print_exception(type(e), e, e.__traceback__)
 	else: 
 		await ctx.send(f'Synced {len(synced_commands)} command(s).')
-
+@bot.command()
+async def machine_time(ctx):
+	now = datetime.datetime.now()
+	current_time = now.strftime("%H:%M:%S")
+	await ctx.send(str(current_time))
 async def main():
 	async with bot:
 		await bot.start(os.getenv('TOKEN_TEMP'))

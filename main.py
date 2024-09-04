@@ -83,7 +83,7 @@ for i in range(4):
 
     for date in list(A) if i == 0 else list(B) if i == 1 else list(C) if i == 2 else list(D):
         while len(temparray) < 8:
-            temparray.append(count%14+1)
+            temparray.append((count%15+1) if i == 0 else (count%14+1) if i == 1 else (count%14+1) if i == 2 else (count%11+1))
             count +=1
         csv_writer.writerow([date.strftime('%d/%m/%Y'), temparray])
         temparray = []
