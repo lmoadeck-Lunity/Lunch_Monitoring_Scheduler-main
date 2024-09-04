@@ -74,12 +74,19 @@ print(A, B, C, D)
 # ruleset_5D.rrule(rrule(freq=WEEKLY,interval=3, until=datetime(2025, 6, 30), byweekday=FR, dtstart=datetime(2024, 9, 27)))
 # [ruleset_5D.exdate(i) for i in holidays]
 # print(len(list(ruleset_5A)), len(list(ruleset_5B)), len(list(ruleset_5C)), len(list(ruleset_5D)))
+temparray = []
+count = 0
 for i in range(4):
     csv_file = open(f'5{chr(65+i)}.csv', 'w',newline='')
     csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(['Date'])
+    csv_writer.writerow(['Date','Groups'])
+
     for date in list(A) if i == 0 else list(B) if i == 1 else list(C) if i == 2 else list(D):
-        csv_writer.writerow([date.strftime('%d/%m/%Y')])
+        while len(temparray) < 8:
+            temparray.append(count%14+1)
+            count +=1
+        csv_writer.writerow([date.strftime('%d/%m/%Y'), temparray])
+        temparray = []
     csv_file.close()
 
 # csv_file = open('output.csv', 'w',newline='')

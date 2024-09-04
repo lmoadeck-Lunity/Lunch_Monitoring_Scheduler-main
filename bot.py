@@ -6,12 +6,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 intents = discord.Intents.default()
-bot = commands.Bot(command_prefix=',<', intents=intents)
+bot = commands.Bot(command_prefix=';', intents=intents)
 admin = int(os.getenv('ADMIN'))
 
 @bot.event
 async def on_ready():
-	print('Stepfordle is ready.')
+	print('Rice is ready.')
 	print(f'System time: {time.ctime()}')
 
 @bot.event
@@ -24,7 +24,7 @@ async def cog_load(ctx, cog_name = None):
 		await ctx.send('You do not have permission to use this command.')
 		return
 	if not cog_name:
-		for filename in os.listdir('./cogs'):
+		for filename in os.listdir('./cogs'):	
 			await bot.load_extension(f'cogs.{filename[:-3]}')
 			await ctx.send(f'Loaded cog `{filename[:-3]}`.')
 			print(f'Loaded cog {filename[:-3]} at {time.ctime()}.')
