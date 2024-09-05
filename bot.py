@@ -22,7 +22,7 @@ async def on_ready():
 @bot.event
 async def on_message(message):
 	await bot.process_commands(message)
-	print(f'{message.author} sent a message at {time.ctime()}: {message.content}')
+	# print(f'{message.author} sent a message at {time.ctime()}: {message.content}')
 
 @bot.command()
 async def cog_load(ctx, cog_name = None):
