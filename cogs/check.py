@@ -24,6 +24,7 @@ class checkschedule(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
 		self.daily_reminder.start()
+		self.after_lunchtime_cleanup.start()
 
 	time_to_repeat = [datetime.time(hour=7, minute=10, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))), datetime.time(hour=7, minute=30, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))), datetime.time(hour=7, minute=50, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))]
 	after_lunchtime = datetime.time(hour=13, minute=0, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))
@@ -59,6 +60,7 @@ class checkschedule(commands.Cog):
 					await channel.send(f'是日更表為：')
 					for index, value in enumerate(list22):
 						await channel.send(f'第{value}組 1230 私 {classroom_lookup_table[index+1]} ||@G{value}||')	
+		return
 	@tasks.loop(time=after_lunchtime)
 	async def after_lunchtime_cleanup(self):
 		for i in ['A','B','C','D']:
@@ -81,7 +83,6 @@ class checkschedule(commands.Cog):
 	@app_commands.describe(class_='輸入班別，如5A請輸入A',grp_no='輸入組別，如組別1請輸入1')
 	async def checkschedule_alldates(self, interaction: discord.Interaction, class_:str, grp_no:str):
 		await interaction.response.defer()
-
 		dong_zik_days = []
 		dong_zik_classroomno = []
 		
@@ -91,7 +92,7 @@ class checkschedule(commands.Cog):
 		if int(grp_no) < 1 or int(grp_no) > 15:
 			await interaction.followup.send('組別只可以係 0<x<16')
 			return
-		if grp_no > max_gp[class_]:
+		if int(grp_no) > max_gp[class_]:
 			await interaction.followup.send('組別唔可以超過班別組別數量。')
 			return
 		# await interaction.followup.send(f'你輸入嘅班別係{class_}，組別係{grp_no}。')
@@ -110,13 +111,17 @@ class checkschedule(commands.Cog):
 		# await interaction.followup.send(f'你嘅組別係{grp_no}，你有{len(dong_zik_days)}次當值日。')
 		total_string = ''
 		for i in range(len(dong_zik_days)):
-			total_string += f'{dong_zik_days[i]} - {dong_zik_classroomno[i]}\n'
+			if class_ in ['A','B']:
+				total_string += f'{dong_zik_days[i]} - {dong_zik_classroomno[i]}\n'
+			else:
+				total_string += f'{dong_zik_days[i]}\n'
 		await interaction.followup.send(f'你輸入嘅班別係{class_}，組別係{grp_no}。\n你有{len(dong_zik_days)}次當值日。\n以下日子請當值:\n--------------------------\n'+total_string)
 	
 	@app_commands.command(name='checkschedule_nextdate', description='查詢下一次值日日子。')
 	@app_commands.describe(class_='輸入班別，如5A請輸入A',grp_no='輸入組別，如組別1請輸入1')
 	async def checkschedule_nextdate(self, interaction: discord.Interaction, class_:str, grp_no:str):
 		await interaction.response.defer()
+		print('checkschedule_nextdate')
 		classroom_lookup_table = {
 		1 : '101 - 1A',
 		2 : '102 - 1B',
@@ -136,7 +141,7 @@ class checkschedule(commands.Cog):
 		if int(grp_no) < 1 or int(grp_no) > 15:
 			await interaction.followup.send('組別只可以係 0<x<16。')
 			return
-		if grp_no > max_gp[class_]:
+		if int(grp_no) > max_gp[class_]:
 			await interaction.followup.send('組別唔可以超過班別組別數量。')
 			return
 		# await interaction.followup.send(f'你輸入嘅班別係{class_}，組別係{grp_no}。')
@@ -162,8 +167,9 @@ class checkschedule(commands.Cog):
 			await interaction.followup.send('本年度已經冇更多值日。多謝您這一年的付出。中六見。')
 			return
 		# await interaction.followup.send(f'你嘅組別係{grp_no}，你有{len(dong_zik_days)}次當值日。')
-		
-		await interaction.followup.send(f'你下一次當值日係{dong_zik_days[0]}，地點係{dong_zik_classroomno[0]}。')
+		substring1 = f'，地點係{dong_zik_classroomno[0]}。'
+		substring2 = f'。'
+		await interaction.followup.send(f'你下一次當值日係{dong_zik_days[0]}{substring1 if class_ not in ['C','D'] else substring2}')
 
 	@app_commands.command(name='set_absent', description='設定缺席。')
 	@app_commands.describe(class_='輸入班別，如5A請輸入A',grp_no='輸入組別，如組別1請輸入1',date='輸入日期，如2024年9月17日請輸入17/09/2024')
@@ -184,51 +190,54 @@ class checkschedule(commands.Cog):
 		if datetime.datetime.strptime(date, '%d/%m/%Y').date().weekday() > 4:
 			await interaction.followup.send('日期唔可以係星期六或星期日。')
 			return
-		if grp_no > max_gp[class_]:
+		if int(grp_no) > max_gp[class_]:
 			await interaction.followup.send('組別唔可以超過班別組別數量。')
 			return
 		
 		found1 = False
 		runtimes = 0
-		file = open(f'5{class_}.csv', 'r')
-		csv_reader = list(csv.reader(file))
-		moved = False
-		for row in csv_reader:
-			if row[0] == 'Date':
-				continue
-			runtimes += 1
-			list22 = map(int,row[1].strip('][').split(', '))
-			list22 = list(list22)
-			found1 = False
-			if row[0] == date:
-				found1 = True
-				if int(grp_no) in list22:
-					list22.remove(int(grp_no))
-					list22.append(max(list22)+1)
-
-					csv_reader[runtimes][1] = list22
-					moved = True
-
-
+		if class_ in ['C','D']:
+			await interaction.followup.send('抱歉，班別C和D唔支援呢個功能。')
+		else:
+			file = open(f'5{class_}.csv', 'r')
+			csv_reader = list(csv.reader(file))
+			moved = False
+			for row in csv_reader:
+				if row[0] == 'Date':
 					continue
-			if moved:
-				# increment all numbers in the list by 1 if they are less than 14, otherwise set them to 1
-				list22 = [x+1 if x < max_gp[class_] else 1 for x in list22]
-				csv_reader[runtimes][1] = list22
-				await interaction.followup.send(f'已經設定5{class_}班的{grp_no}組別在{date}缺席，並且已將所有組別編號移向後一格。')
+				runtimes += 1
+				list22 = map(int,row[1].strip('][').split(', '))
+				list22 = list(list22)
+				found1 = False
+				if row[0] == date:
+					found1 = True
+					if int(grp_no) in list22:
+						list22.remove(int(grp_no))
+						list22.append(max(list22)+1)
 
-		if not found1:
-			await interaction.followup.send(f'該日組別{grp_no}無需當值。')
+						csv_reader[runtimes][1] = list22
+						moved = True
+
+
+						continue
+				if moved:
+					# increment all numbers in the list by 1 if they are less than 14, otherwise set them to 1
+					list22 = [x+1 if x < max_gp[class_] else 1 for x in list22]
+					csv_reader[runtimes][1] = list22
+					await interaction.followup.send(f'已經設定5{class_}班的{grp_no}組別在{date}缺席，並且已將所有組別編號移向後一格。')
+
+			if not found1:
+				await interaction.followup.send(f'該日組別{grp_no}無需當值。')
+				return
+				
+			file.close()
+			file = open(f'5{class_}.csv', 'w',newline='')
+			csv_writer = csv.writer(file)
+			for row in csv_reader:
+				csv_writer.writerow(row)
+			file.close()
+			await interaction.followup.send(f'成功更新時間表。')
 			return
-			
-		file.close()
-		file = open(f'5{class_}.csv', 'w',newline='')
-		csv_writer = csv.writer(file)
-		for row in csv_reader:
-			csv_writer.writerow(row)
-		file.close()
-		await interaction.followup.send(f'成功更新時間表。')
-		return
 
 				
 async def setup(bot):

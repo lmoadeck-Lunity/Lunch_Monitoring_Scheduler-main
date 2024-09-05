@@ -9,6 +9,7 @@ load_dotenv()
 defIntents = discord.Intents.default()
 defIntents.members = True
 defIntents.message_content = True
+
 bot = commands.Bot(command_prefix=';', intents=defIntents)
 admin = int(os.getenv('ADMIN'))
 
