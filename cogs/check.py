@@ -332,7 +332,7 @@ class checkschedule(commands.Cog):
 				list22 = map(int,line[1].strip('][').split(', '))
 				list22 = list(list22)
 				if datetime.datetime.strptime(date, '%d/%m/%Y').date() == datetime.datetime.strptime(f'{line[0]}/00:00', '%d/%m/%Y/%H:%M').date():
-					await interaction.followup.send(f'是日更表為：')
+					await interaction.followup.send(f'{date}的更表為：')
 					for index, value in enumerate(list22):
 						total_string +=f'5{i}班 第{value}組 -> {classroom_lookup_table[index+1]}'+'\n'
 		await interaction.followup.send(total_string)
