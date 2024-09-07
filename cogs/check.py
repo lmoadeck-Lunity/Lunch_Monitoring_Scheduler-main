@@ -208,9 +208,10 @@ class checkschedule(commands.Cog):
 		await interaction.followup.send(f'你下一次當值日係{dong_zik_days[0]}{substring1 if class_ not in ['C','D'] else substring2}')
 
 	@app_commands.command(name='set_absent', description='設定缺席。')
-	@app_commands.describe(class_='輸入班別，如5A請輸入A',grp_no='輸入組別，如組別1請輸入1',date='輸入日期，如2024年9月17日請輸入17/09/2024')
-	async def set_absent(self, interaction: discord.Interaction, class_:str, grp_no:str, date:str):
+	@app_commands.describe(class_='輸入班別，如5A請輸入A',grp_no='輸入組別，如組別1請輸入1',month = '輸入月份，如9月請輸入9',day = '輸入日期，如17號請輸入17')
+	async def set_absent(self, interaction: discord.Interaction, class_:str, grp_no:str, month:int, day:int):
 		await interaction.response.defer()
+		date = f'{str(day).zfill(2)}/{str(month).zfill(2)}/{2024 if month > 6 else 2025}'
 		if class_ not in ['A','B','C','D']:
 			await interaction.followup.send('班別只可以係 A, B, C, D。')
 			return
@@ -313,8 +314,9 @@ class checkschedule(commands.Cog):
 		await interaction.followup.send(total_string)
 		return
 	@app_commands.command(name='check_day', description='查詢指定日期值日。')
-	@app_commands.describe(date='輸入日期，如2024年9月17日請輸入17/09/2024')
-	async def check_day(self, interaction: discord.Interaction, date:str):
+	@app_commands.describe(month='輸入月份，如9月請輸入9',day='輸入日期，如17號請輸入17')
+	async def check_day(self, interaction: discord.Interaction, month:int, day:int):
+		date = f'{str(day).zfill(2)}/{str(month).zfill(2)}/{2024 if month > 6 else 2025}'
 		await interaction.response.defer()
 		total_string = ''
 		for i in ['A','B','C','D']:
