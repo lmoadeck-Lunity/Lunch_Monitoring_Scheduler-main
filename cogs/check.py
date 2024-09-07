@@ -157,7 +157,7 @@ class checkschedule(commands.Cog):
 	@app_commands.describe(class_='輸入班別，如5A請輸入A',grp_no='輸入組別，如組別1請輸入1')
 	async def checkschedule_nextdate(self, interaction: discord.Interaction, class_:str, grp_no:str):
 		await interaction.response.defer()
-		print('checkschedule_nextdate')
+		# print('checkschedule_nextdate')
 		classroom_lookup_table = {
 		1 : '101 - 1A',
 		2 : '102 - 1B',
@@ -250,18 +250,18 @@ class checkschedule(commands.Cog):
 				list22 = list(list22)
 				
 				if row[0] == date:
-					print('found')
+					# print('found')
 					found1 = True
 					if int(grp_no) in list22:
 						# print('found2', list22)
-						print('0', runtimes)
+						# print('0', runtimes)
 						list22.remove(int(grp_no))
-						print('1', list22)
+						# print('1', list22)
 						list22.append((max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1))
-						print('2', list22)
+						# print('2', list22)
 						csv_reader[runtimes][1] = list22
-						print(csv_reader[runtimes][1])
-						print(csv_reader)
+						# print(csv_reader[runtimes][1])
+						# print(csv_reader)
 						moved = True
 						
 						continue
@@ -272,11 +272,11 @@ class checkschedule(commands.Cog):
 					# print('moved')
 					list22 = [x+1 if x < max_gp[class_] else 1 for x in list22]
 					csv_reader[runtimes][1] = list22
-					print(runtimes)
-					print(csv_reader)
+					# print(runtimes)
+					# print(csv_reader)
 					success = True
-				print('3',found1)
-			print('4',found1)
+				# print('3',found1)
+			# print('4',found1)
 			
 			if not found1:
 				await interaction.followup.send(f'該日組別{grp_no}無需當值。')
