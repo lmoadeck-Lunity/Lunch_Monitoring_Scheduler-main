@@ -322,6 +322,10 @@ class checkschedule(commands.Cog):
 		date = f'{str(day).zfill(2)}/{str(month).zfill(2)}/{2024 if month > 6 else 2025}'
 		await interaction.response.defer()
 		total_string = ''
+		found = False
+		if datetime.datetime.strptime(date, '%d/%m/%Y').date() < datetime.datetime.now().date():
+			await interaction.followup.send('無法查詢過去日期。')
+			return
 		for i in ['A','B','C','D']:
 			file = open(f'5{i}.csv', 'r')
 			csv_reader = csv.reader(file)
@@ -332,9 +336,13 @@ class checkschedule(commands.Cog):
 				list22 = map(int,line[1].strip('][').split(', '))
 				list22 = list(list22)
 				if datetime.datetime.strptime(date, '%d/%m/%Y').date() == datetime.datetime.strptime(f'{line[0]}/00:00', '%d/%m/%Y/%H:%M').date():
+					found = True
 					await interaction.followup.send(f'{date}的更表為：')
 					for index, value in enumerate(list22):
 						total_string +=f'5{i}班 第{value}組 -> {classroom_lookup_table[index+1]}'+'\n'
+		if not found:
+			await interaction.followup.send(f'{date}冇值日。')
+			return
 		await interaction.followup.send(total_string)
 		return
 						
