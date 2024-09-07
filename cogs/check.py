@@ -297,6 +297,9 @@ class checkschedule(commands.Cog):
 	@app_commands.describe()
 	async def check_today(self, interaction: discord.Interaction):
 		await interaction.response.defer()
+		if datetime.datetime.now().weekday() == 6 or datetime.datetime.now().weekday() == 5:
+			await interaction.followup.send('今日星期六或星期日，冇值日。')
+			return
 		total_string = ''
 		for i in ['A','B','C','D']:
 			file = open(f'5{i}.csv', 'r')
