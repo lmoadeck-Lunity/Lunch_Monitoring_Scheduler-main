@@ -50,7 +50,7 @@ class checkschedule(commands.Cog):
 		self.bot = bot
 		self.daily_reminder.start()
 		self.after_lunchtime_cleanup.start()
-		self.on_ready()
+		
 
 	time_to_repeat = [datetime.time(hour=7, minute=10, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))), datetime.time(hour=7, minute=30, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))), datetime.time(hour=7, minute=50, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))]
 	after_lunchtime = datetime.time(hour=13, minute=0, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))
@@ -113,16 +113,7 @@ class checkschedule(commands.Cog):
 
 					
 
-	@commands.Cog.listener()
-	async def on_ready(self):
-		#run_absentees
-		file = open('total_absentees.csv', 'r')
-		csv_reader = csv.reader(file)
-		for line in csv_reader:
-			class_ = line[0].strip('5')
-			grp_no = line[1]
-			date = line[2]
-			self.set_absent(class_, grp_no, date.split('/')[1], date.split('/')[0])
+
 
 
 	
@@ -368,4 +359,8 @@ class checkschedule(commands.Cog):
 
 				
 async def setup(bot):
-	await bot.add_cog(checkschedule(bot))
+	try:
+		await bot.add_cog(checkschedule(bot))
+	except Exception as e:
+		print(e)
+		traceback.print_exc()

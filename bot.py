@@ -2,13 +2,10 @@ import discord, time, os, asyncio, traceback
 from discord.ext import commands
 from dotenv import load_dotenv
 import datetime
-import datetime
 import calendar
 from dateutil.rrule import *
 from dateutil.parser import *
 import csv
-
-from datetime import *
 import itertools
 # load_dotenv('./Stepfordle/.env')
 load_dotenv()
@@ -19,11 +16,125 @@ defIntents.message_content = True
 
 bot = commands.Bot(command_prefix=';', intents=defIntents)
 admin = int(os.getenv('ADMIN'))
+def set_absent(class_:str, grp_no:str, month:int, day:int):
+		# global max_gp
+		max_gp = {'A':15,'B':14,'C':8,'D':8}
+		# global classroom_lookup_table
+		classroom_lookup_table = {
+				1 : '101 - 1A',
+				2 : '102 - 1B',
+				3 : '103 - 1C',
+				4 : '104 - 1D',
+				5 : '201 - 2A',
+				6 : '202 - 2B',
+				7 : '203 - 2C',
+				8 : '204 - 2D',
+		}
+		date = f'{str(day).zfill(2)}/{str(month).zfill(2)}/{2024 if month > 6 else 2025}'
+		if class_ not in ['A','B','C','D']:
+			print('班別只可以係 A, B, C, D。')
+			return
+		if int(grp_no) < 1 or int(grp_no) > 15:
+			print('組別只可以係 0<x<16。')
+			return
+		if datetime.datetime.strptime(date, '%d/%m/%Y').date() < datetime.datetime.now().date():
+			print('日期唔可以係過去。')
+			return
+		if datetime.datetime.strptime(date, '%d/%m/%Y').date() > datetime.datetime(2025, 6, 30).date():
+			print ('日期超過全日制學期上課日終止點。')
+			return
+		if datetime.datetime.strptime(date, '%d/%m/%Y').date().weekday() > 4:
+			print('日期唔可以係星期六或星期日。')
+			return
+		if int(grp_no) > max_gp[class_]:
+			print('組別唔可以超過班別組別數量。')
+			return
+		
+		found1 = False
+		runtimes = 0
+		moved = False
+		if class_ in ['C','D']:
+			print('抱歉，班別C和D唔支援呢個功能。')
+		else:
+			file = open(f'5{class_}.csv', 'r')
+			csv_reader = list(csv.reader(file))
+			for row in csv_reader:
+
+
+
+				if row[0] == 'Date':
+					continue
+				runtimes += 1
+				list22 = map(int,row[1].strip('[]').split(', '))
+				list22 = list(list22)
+				
+				if row[0] == date:
+					# print('found')
+					found1 = True
+					if int(grp_no) in list22:
+						# print('found2', list22)
+						# print('0', runtimes)
+						index_of_gp = list22.index(int(grp_no))
+						print('index_of_gp', index_of_gp)
+						# print('1', list22)
+						# list22.append((max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1))
+						list22[index_of_gp] = max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1
+						# print('2', list22)
+						csv_reader[runtimes][1] = list22
+						# print(csv_reader[runtimes][1])
+						# print(csv_reader)
+						moved = True
+						continue
+					else:
+						print(f'該日組別{grp_no}無需當值。')
+						return
+				if moved:
+					# print('moved')
+					list22 = [x+1 if x < max_gp[class_] else 1 for x in list22]
+					csv_reader[runtimes][1] = list22
+					# print(runtimes)
+					# print(csv_reader)
+					success = True
+				# print('3',found1)
+			# print('4',found1)
+			
+			if not found1:
+				print(f'該日組別{grp_no}無需當值。')
+				return
+			if success:
+				print(f'已經設定5{class_}班的{grp_no}組別在{date}缺席，並且已將所有組別編號移向後一格。')
+				
+			file.close()
+			file = open(f'5{class_}.csv', 'w',newline='')
+			csv_writer = csv.writer(file)
+			for row in csv_reader:
+				csv_writer.writerow(row)
+			file.close()
+			print(f'成功更新時間表。')
+			return
 
 @bot.event
 async def on_ready():
 	print('Rice is ready.')
 	print(f'System time: {time.ctime()}')
+	
+	file = open('total_absentees.csv', 'r')
+	csv_reader = csv.reader(file)
+	try:
+		for line in csv_reader:
+			if line == ['']:
+				continue
+			
+			class_ = line[0].strip('5')
+			grp_no = line[1]
+			date = line[2]
+			set_absent(class_, grp_no, int(date.split('/')[1]), int(date.split('/')[0]))
+		file.close()
+		print('Loaded absentees.')
+	except Exception as e:
+		traceback.print_exception(type(e), e, e.__traceback__)
+		print('Failed to load absentees.')
+		file.close()
 	await bot.load_extension(f'cogs.check')
 
 
@@ -184,6 +295,7 @@ async def reset_timetable(ctx):
 				temparray = []
 			csv_file.close()
 		file2 = open('')
+		await ctx.send('Timetable reset.')
 @bot.command()
 async def send_absent_list(ctx):
 	if ctx.author.id != admin: 
@@ -215,4 +327,8 @@ async def main():
 
 
 if __name__ == '__main__':
-	asyncio.run(main())
+	try:
+		asyncio.run(main())
+	except Exception as e:
+		traceback.print_exception(type(e), e, e.__traceback__)
+		print('An error has occurred.')
