@@ -1,6 +1,8 @@
 import discord, time, os, asyncio, traceback
 from discord.ext import commands
 from dotenv import load_dotenv
+
+
 import datetime
 import calendar
 from dateutil.rrule import *
@@ -117,10 +119,11 @@ def set_absent(class_:str, grp_no:str, month:int, day:int):
 async def on_ready():
 	print('Rice is ready.')
 	print(f'System time: {time.ctime()}')
-	
-	file = open('total_absentees.csv', 'r')
-	csv_reader = csv.reader(file)
+	await bot.load_extension(f'cogs.check')
+
 	try:
+		file = open('total_absentees.csv', 'r')
+		csv_reader = csv.reader(file)
 		for line in csv_reader:
 			if line == ['']:
 				continue
@@ -135,13 +138,13 @@ async def on_ready():
 		traceback.print_exception(type(e), e, e.__traceback__)
 		print('Failed to load absentees.')
 		file.close()
-	await bot.load_extension(f'cogs.check')
+	
 
 
 @bot.event
 async def on_message(message):
 	await bot.process_commands(message)
-	# print(f'{message.author} sent a message at {time.ctime()}: {message.content}')
+	print(f'{message.author} sent a message at {time.ctime()}: {message.content}')
 
 @bot.command()
 async def cog_load(ctx, cog_name = None):
@@ -231,71 +234,76 @@ async def machine_time(ctx):
 
 @bot.command()
 async def reset_timetable(ctx):
-	if ctx.author.id != admin: 
-		await ctx.send('You do not have permission to use this command.')
-		return
-	else:
-		parserinfo_ = parserinfo(dayfirst=True)
+	try:
+		if ctx.author.id != admin: 
+			await ctx.send('You do not have permission to use this command.')
+			return
+		else:
+			parserinfo_ = parserinfo(dayfirst=True)
 
-		def parse_date(date_str):
-			if '-' in date_str:
-				start, end = date_str.split('-')
-				st_day, st_month = map(int, start.split('/'))
-				en_day, en_month = map(int, end.split('/'))
-				# print(st_day, st_month, en_day, en_month)
-				datetime_start = date(2024, st_month, st_day) if st_month > 6 else date(2025, st_month, st_day)
-				datetime_end = date(2024, en_month, en_day) if en_month > 6 else date(2025, en_month, en_day)
-				return list(rrule(freq=DAILY, until=datetime_end, dtstart=datetime_start))
-			else:
-				return parse(date_str,parserinfo=parserinfo_)
-		calendar_ = calendar.Calendar()
-		holidays = '18/9,27/9,1/10,4/10,11/10,16/10-24/10,4/11,19/11,20/11,2/12,20/12,22/12-2/1,6/1,20/1,27/1-5/2,19/3,4/4-24/4,1/5,5/5,13/5,26/5,5/6,23/6'.split(',')
-		holidays = [parse_date(x) for x in holidays]
-		holidays = list(itertools.chain([a for x in holidays if isinstance(x, list) for a in x], [x for x in holidays if not isinstance(x, list)]))
-		# print(holidays)
-		A = []
-		B = []
-		C = []
-		D = []
-		count = 0
-		dates_range = list(rrule(freq=DAILY, until=datetime(2025, 6, 30), dtstart=datetime(2024, 9, 4)))
-		dates_range = [x for x in dates_range if x.weekday() < 5 and x not in holidays]
-		for date in dates_range:
-			if date.weekday() == 0:
-				A.append(date)
-			elif date.weekday() == 1:
-				B.append(date)
-			elif date.weekday() == 2:
-				C.append(date)
-			elif date.weekday() == 3:
-				D.append(date)
-			elif date.weekday() == 4:
-				if count % 4 == 0:
+			def parse_date(date_str):
+				if '-' in date_str:
+					start, end = date_str.split('-')
+					st_day, st_month = map(int, start.split('/'))
+					en_day, en_month = map(int, end.split('/'))
+					# print(st_day, st_month, en_day, en_month)
+					datetime_start = datetime.date(2024, st_month, st_day) if st_month > 6 else datetime.date(2025, st_month, st_day)
+					datetime_end = datetime.date(2024, en_month, en_day) if en_month > 6 else datetime.date(2025, en_month, en_day)
+					return list(rrule(freq=DAILY, until=datetime_end, dtstart=datetime_start))
+				else:
+					return parse(date_str,parserinfo=parserinfo_)
+			calendar_ = calendar.Calendar()
+			holidays = '18/9,27/9,1/10,4/10,11/10,16/10-24/10,4/11,19/11,20/11,2/12,20/12,22/12-2/1,6/1,20/1,27/1-5/2,19/3,4/4-24/4,1/5,5/5,13/5,26/5,5/6,23/6'.split(',')
+			holidays = [parse_date(x) for x in holidays]
+			holidays = list(itertools.chain([a for x in holidays if isinstance(x, list) for a in x], [x for x in holidays if not isinstance(x, list)]))
+			# print(holidays)
+			A = []
+			B = []
+			C = []
+			D = []
+			count = 0
+			dates_range = list(rrule(freq=DAILY, until=datetime.datetime(2025, 6, 30), dtstart=datetime.datetime(2024, 9, 4)))
+			dates_range = [x for x in dates_range if x.weekday() < 5 and x not in holidays]
+			for date in dates_range:
+				if date.weekday() == 0:
 					A.append(date)
-				elif count % 4 == 1:
+				elif date.weekday() == 1:
 					B.append(date)
-				elif count % 4 == 2:
+				elif date.weekday() == 2:
 					C.append(date)
-				elif count % 4 == 3:
+				elif date.weekday() == 3:
 					D.append(date)
-				count += 1
-		print(A, B, C, D)
-		temparray = []
-		count = 0
-		for i in range(4):
-			csv_file = open(f'5{chr(65+i)}.csv', 'w',newline='')
-			csv_writer = csv.writer(csv_file)
-			csv_writer.writerow(['Date','Groups'])
+				elif date.weekday() == 4:
+					if count % 4 == 0:
+						A.append(date)
+					elif count % 4 == 1:
+						B.append(date)
+					elif count % 4 == 2:
+						C.append(date)
+					elif count % 4 == 3:
+						D.append(date)
+					count += 1
+			# print(A, B, C, D)
+			temparray = []
+			count = 0
+			for i in range(4):
+				csv_file = open(f'5{chr(65+i)}.csv', 'w',newline='')
+				csv_writer = csv.writer(csv_file)
+				csv_writer.writerow(['Date','Groups'])
 
-			for date in list(A) if i == 0 else list(B) if i == 1 else list(C) if i == 2 else list(D):
-				while len(temparray) < 8:
-					temparray.append((count%15+1) if i == 0 else (count%14+1) if i == 1 else (count%8+1) if i == 2 else (count%8+1))
-					count +=1
-				csv_writer.writerow([date.strftime('%d/%m/%Y'), temparray])
-				temparray = []
-			csv_file.close()
-		file2 = open('')
-		await ctx.send('Timetable reset.')
+				for date in list(A) if i == 0 else list(B) if i == 1 else list(C) if i == 2 else list(D):
+					while len(temparray) < 8:
+						temparray.append((count%15+1) if i == 0 else (count%14+1) if i == 1 else (count%8+1) if i == 2 else (count%8+1))
+						count +=1
+					csv_writer.writerow([date.strftime('%d/%m/%Y'), temparray])
+					temparray = []
+				csv_file.close()
+			
+			await ctx.send('Timetable reset.')
+	except Exception as e:
+		traceback.print_exception(type(e), e, e.__traceback__)
+		await ctx.send('An error has occurred.')
+
 @bot.command()
 async def send_absent_list(ctx):
 	if ctx.author.id != admin: 
@@ -305,6 +313,7 @@ async def send_absent_list(ctx):
 		file = file.open('total_absentees.csv', 'r')
 		await ctx.send(f'```csv\n{file.read()}```')
 		file.close()
+
 @bot.command()
 async def revoke_absent(ctx,index:int):
 	if ctx.author.id != admin: 
@@ -319,6 +328,7 @@ async def revoke_absent(ctx,index:int):
 		file.writelines(lines)
 		file.close()
 		await ctx.send('Revoked absence.')
+
 async def main():
 	async with bot:
 		await bot.start(os.getenv('TOKEN_TEMP'))
