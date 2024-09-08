@@ -125,7 +125,7 @@ async def on_ready():
 		file = open('total_absentees.csv', 'r')
 		csv_reader = csv.reader(file)
 		for line in csv_reader:
-			if line == ['']:
+			if line == []: 
 				continue
 			
 			class_ = line[0].strip('5')
@@ -310,9 +310,13 @@ async def send_absent_list(ctx):
 		await ctx.send('You do not have permission to use this command.')
 		return
 	else:
-		file = file.open('total_absentees.csv', 'r')
-		await ctx.send(f'```csv\n{file.read()}```')
-		file.close()
+		try:
+			file = open('total_absentees.csv', 'r')
+			await ctx.send(f'```csv\n{file.read()}```')
+			file.close()
+		except Exception as e:
+			traceback.print_exception(type(e), e, e.__traceback__)
+			await ctx.send('An error has occurred.')
 
 @bot.command()
 async def revoke_absent(ctx,index:int):
@@ -320,14 +324,18 @@ async def revoke_absent(ctx,index:int):
 		await ctx.send('You do not have permission to use this command.')
 		return
 	else:
-		file = open('total_absentees.csv', 'r')
-		lines = file.readlines()
-		file.close()
-		file = open('total_absentees.csv', 'w')
-		lines.pop(index)
-		file.writelines(lines)
-		file.close()
-		await ctx.send('Revoked absence.')
+		try:
+			file = open('total_absentees.csv', 'r')
+			lines = file.readlines()
+			file.close()
+			file = open('total_absentees.csv', 'w')
+			lines.pop(index)
+			file.writelines(lines)
+			file.close()
+			await ctx.send('Revoked absence.')
+		except Exception as e:
+			traceback.print_exception(type(e), e, e.__traceback__)
+			await ctx.send('An error has occurred.')
 
 async def main():
 	async with bot:
