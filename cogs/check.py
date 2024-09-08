@@ -50,6 +50,7 @@ class checkschedule(commands.Cog):
 		self.bot = bot
 		self.daily_reminder.start()
 		self.after_lunchtime_cleanup.start()
+		self.on_ready()
 
 	time_to_repeat = [datetime.time(hour=7, minute=10, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))), datetime.time(hour=7, minute=30, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))), datetime.time(hour=7, minute=50, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))]
 	after_lunchtime = datetime.time(hour=13, minute=0, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))
@@ -112,9 +113,19 @@ class checkschedule(commands.Cog):
 
 					
 
+	@commands.Cog.listener()
+	async def on_ready(self):
+		#run_absentees
+		file = open('total_absentees.csv', 'r')
+		csv_reader = csv.reader(file)
+		for line in csv_reader:
+			class_ = line[0].strip('5')
+			grp_no = line[1]
+			date = line[2]
+			self.set_absent(class_, grp_no, date.split('/')[1], date.split('/')[0])
+
+
 	
-
-
 	@app_commands.command(name='checkschedule_alldates', description='查詢所有值日日子。')
 	@app_commands.describe(class_='輸入班別，如5A請輸入A',grp_no='輸入組別，如組別1請輸入1')
 	async def checkschedule_alldates(self, interaction: discord.Interaction, class_:str, grp_no:str):
@@ -255,15 +266,20 @@ class checkschedule(commands.Cog):
 					if int(grp_no) in list22:
 						# print('found2', list22)
 						# print('0', runtimes)
-						list22.remove(int(grp_no))
+						index_of_gp = list22.index(int(grp_no))
+						print('index_of_gp', index_of_gp)
 						# print('1', list22)
-						list22.append((max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1))
+						# list22.append((max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1))
+						list22[index_of_gp] = max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1
 						# print('2', list22)
 						csv_reader[runtimes][1] = list22
 						# print(csv_reader[runtimes][1])
 						# print(csv_reader)
 						moved = True
-						
+						total_absentees = open('total_absentees.csv', 'a')
+						csv_writer = csv.writer(total_absentees)
+						csv_writer.writerow([f'5{class_}',grp_no,date])
+						total_absentees.close()
 						continue
 					else:
 						await interaction.followup.send(f'該日組別{grp_no}無需當值。')
