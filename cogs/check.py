@@ -89,9 +89,15 @@ class checkschedule(commands.Cog):
 					if datetime.datetime.now().date() == datetime.datetime.strptime(f'{line[0]}/00:00', '%d/%m/%Y/%H:%M').date():
 						async for line in channel.history(limit=None):
 							await line.delete()
+						try:
+							file = discord.File(f'grouplist/{i}.png')
+							await channel.send(file=file)
+						except FileNotFoundError:
+							pass
 						await channel.send(f'是日更表為：')
+
 						for index, value in enumerate(list22,1):
-							await channel.send(f'第{value}組 1230 --> {classroom_lookup_table[index]} ||<@&{role_map[index]}>||')	
+							await channel.send(f'第{value}組 1230 --> {classroom_lookup_table[index]} ||<@&{role_map[value]}>||')	
 		except Exception as e:
 			print(e)
 			traceback.print_exc()

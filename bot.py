@@ -15,7 +15,13 @@ load_dotenv()
 defIntents = discord.Intents.default()
 defIntents.members = True
 defIntents.message_content = True
-
+global channel_map
+channel_map = {
+	'A': 1280752582050054167,
+	'B': 1280752596516208720,
+	'C': 1280752611783479336,
+	'D': 1280752621954797568
+}
 bot = commands.Bot(command_prefix=';', intents=defIntents)
 admin = int(os.getenv('ADMIN'))
 def set_absent(class_:str, grp_no:str, month:int, day:int):
@@ -336,6 +342,13 @@ async def revoke_absent(ctx,index:int):
 		except Exception as e:
 			traceback.print_exception(type(e), e, e.__traceback__)
 			await ctx.send('An error has occurred.')
+@bot.command()
+async def cleanup(self):
+		for i in ['A','B','C','D']:
+			channel = self.bot.get_channel(channel_map[i])
+			async for line in channel.history(limit=None):
+				await line.delete()
+		return
 
 async def main():
 	async with bot:
