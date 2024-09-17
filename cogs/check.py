@@ -6,6 +6,8 @@ import traceback
 from discord import app_commands
 from discord.ext import commands, tasks
 import csv
+from typing import Literal
+
 
 global max_gp
 max_gp = {'A':15,'B':14,'C':8,'D':8}
@@ -215,9 +217,11 @@ class checkschedule(commands.Cog):
 		substring2 = f'。'
 		await interaction.followup.send(f'你下一次當值日係{dong_zik_days[0]}{substring1 if class_ not in ['C','D'] else substring2}')
 
+
+
 	@app_commands.command(name='set_absent', description='設定缺席。')
-	@app_commands.describe(class_='輸入班別，如5A請輸入A',grp_no='輸入組別，如組別1請輸入1',month = '輸入月份，如9月請輸入9',day = '輸入日期，如17號請輸入17')
-	async def set_absent(self, interaction: discord.Interaction, class_:str, grp_no:str, month:int, day:int):
+	@app_commands.describe(mode = '編排模式',class_='輸入班別，如5A請輸入A',grp_no='輸入組別，如組別1請輸入1',month = '輸入月份，如9月請輸入9',day = '輸入日期，如17號請輸入17')
+	async def set_absent(self, interaction: discord.Interaction, mode: Literal['append','replace'], class_:Literal['A','B','C','D'], grp_no:str, month:int, day:int):
 		await interaction.response.defer()
 		date = f'{str(day).zfill(2)}/{str(month).zfill(2)}/{2024 if month > 6 else 2025}'
 		if class_ not in ['A','B','C','D']:
@@ -248,9 +252,6 @@ class checkschedule(commands.Cog):
 			file = open(f'5{class_}.csv', 'r')
 			csv_reader = list(csv.reader(file))
 			for row in csv_reader:
-
-
-
 				if row[0] == 'Date':
 					continue
 				runtimes += 1
@@ -261,21 +262,18 @@ class checkschedule(commands.Cog):
 					# print('found')
 					found1 = True
 					if int(grp_no) in list22:
-						# print('found2', list22)
-						# print('0', runtimes)
-						index_of_gp = list22.index(int(grp_no))
-						print('index_of_gp', index_of_gp)
-						# print('1', list22)
-						# list22.append((max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1))
-						list22[index_of_gp] = max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1
-						# print('2', list22)
-						csv_reader[runtimes][1] = list22
-						# print(csv_reader[runtimes][1])
-						# print(csv_reader)
+						if mode == 'replace':
+							index_of_gp = list22.index(int(grp_no))
+							print('index_of_gp', index_of_gp)
+							list22[index_of_gp] = max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1
+							csv_reader[runtimes][1] = list22
+						elif mode == 'append':
+							list22.remove(int(grp_no))
+							list22.append((max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1))
 						moved = True
 						total_absentees = open('total_absentees.csv', 'a')
 						csv_writer = csv.writer(total_absentees)
-						csv_writer.writerow([f'5{class_}',grp_no,date])
+						csv_writer.writerow([f'5{class_}',grp_no,date,mode])
 						total_absentees.close()
 						continue
 					else:

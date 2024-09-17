@@ -24,7 +24,7 @@ channel_map = {
 }
 bot = commands.Bot(command_prefix=';', intents=defIntents)
 admin = int(os.getenv('ADMIN'))
-def set_absent(class_:str, grp_no:str, month:int, day:int):
+def set_absent(class_:str, grp_no:str, month:int, day:int,mode:str):
 		# global max_gp
 		max_gp = {'A':15,'B':14,'C':8,'D':8}
 		# global classroom_lookup_table
@@ -86,9 +86,14 @@ def set_absent(class_:str, grp_no:str, month:int, day:int):
 						print('index_of_gp', index_of_gp)
 						# print('1', list22)
 						# list22.append((max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1))
-						list22[index_of_gp] = max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1
-						# print('2', list22)
-						csv_reader[runtimes][1] = list22
+						if mode == 'replace':
+							index_of_gp = list22.index(int(grp_no))
+							print('index_of_gp', index_of_gp)
+							list22[index_of_gp] = max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1
+							csv_reader[runtimes][1] = list22
+						elif mode == 'append':
+							list22.remove(int(grp_no))
+							list22.append((max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1))
 						# print(csv_reader[runtimes][1])
 						# print(csv_reader)
 						moved = True
@@ -137,7 +142,8 @@ async def on_ready():
 			class_ = line[0].strip('5')
 			grp_no = line[1]
 			date = line[2]
-			set_absent(class_, grp_no, int(date.split('/')[1]), int(date.split('/')[0]))
+			mode = line[3]
+			set_absent(class_, grp_no, int(date.split('/')[1]), int(date.split('/')[0]), mode)
 		file.close()
 		print('Loaded absentees.')
 	except Exception as e:
@@ -268,7 +274,7 @@ async def reset_timetable(ctx):
 			C = []
 			D = []
 			count = 0
-			dates_range = list(rrule(freq=DAILY, until=datetime.datetime(2025, 6, 30), dtstart=datetime.datetime(2024, 9, 4)))
+			dates_range = list(rrule(freq=DAILY, until=datetime.datetime(2025, 6, 30), dtstart=datetime.datetime(2024, 9, 6)))
 			dates_range = [x for x in dates_range if x.weekday() < 5 and x not in holidays]
 			for date in dates_range:
 				if date.weekday() == 0:
