@@ -274,7 +274,7 @@ async def reset_timetable(ctx):
 			C = []
 			D = []
 			count = 0
-			dates_range = list(rrule(freq=DAILY, until=datetime.datetime(2025, 6, 30), dtstart=datetime.datetime(2024, 9, 6)))
+			dates_range = list(rrule(freq=DAILY, until=datetime.datetime(2025, 6, 30), dtstart=datetime.datetime(2024, 9, 4)))
 			dates_range = [x for x in dates_range if x.weekday() < 5 and x not in holidays]
 			for date in dates_range:
 				if date.weekday() == 0:

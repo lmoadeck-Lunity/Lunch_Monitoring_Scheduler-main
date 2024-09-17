@@ -8,7 +8,7 @@ from discord.ext import commands, tasks
 import csv
 from typing import Literal
 
-
+ed = [414779316556136449,807127759972335626]
 global max_gp
 max_gp = {'A':15,'B':14,'C':8,'D':8}
 global classroom_lookup_table
@@ -123,7 +123,43 @@ class checkschedule(commands.Cog):
 
 
 
+	@app_commands.command(name='re-announce', description='重新發佈今日值日。')
+	@app_commands.describe()
+	# @app_commands.AppCommandPermissions(targ)
+	async def re_announce(self, interaction: discord.Interaction):
+		if datetime.datetime.now().weekday() == 6 or datetime.datetime.now().weekday() == 5:
+			return
+		if interaction.user.id not in ed:
+			await interaction.response.send_message('你冇權限。')
+			return
+		try:
+			for i in ['A','B','C','D']:
+				file = open(f'5{i}.csv', 'r')
+				csv_reader = csv.reader(file)
+				channel = self.bot.get_channel(channel_map[i])
 
+				for line in csv_reader:
+					if line[0] == 'Date':
+						continue
+					list22 = map(int,line[1].strip('][').split(', '))
+					list22 = list(list22)
+					channel = self.bot.get_channel(channel_map[i])
+					if datetime.datetime.now().date() == datetime.datetime.strptime(f'{line[0]}/00:00', '%d/%m/%Y/%H:%M').date():
+						async for line in channel.history(limit=None):
+							await line.delete()
+						try:
+							file = discord.File(f'grouplist/{i}.png')
+							await channel.send(file=file)
+						except FileNotFoundError:
+							pass
+						await channel.send(f'是日更表為：')
+
+						for index, value in enumerate(list22,1):
+							await channel.send(f'第{value}組 1230 --> {classroom_lookup_table[index]} ||<@&{role_map[value]}>||')	
+		except Exception as e:
+			print(e)
+			traceback.print_exc()
+		return
 	
 	@app_commands.command(name='checkschedule_alldates', description='查詢所有值日日子。')
 	@app_commands.describe(class_='輸入班別，如5A請輸入A',grp_no='輸入組別，如組別1請輸入1')
@@ -267,14 +303,16 @@ class checkschedule(commands.Cog):
 							print('index_of_gp', index_of_gp)
 							list22[index_of_gp] = max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1
 							csv_reader[runtimes][1] = list22
+							total_absentees = open('total_absentees.csv', 'a')
+							csv_writer = csv.writer(total_absentees)
+							csv_writer.writerow([f'5{class_}',grp_no,date,mode])
+							total_absentees.close()
 						elif mode == 'append':
 							list22.remove(int(grp_no))
 							list22.append((max(list22)+1 if max(list22) < max_gp[class_] else list22[-1]+1))
+							csv_reader[runtimes][1] = list22
 						moved = True
-						total_absentees = open('total_absentees.csv', 'a')
-						csv_writer = csv.writer(total_absentees)
-						csv_writer.writerow([f'5{class_}',grp_no,date,mode])
-						total_absentees.close()
+
 						continue
 					else:
 						await interaction.followup.send(f'該日組別{grp_no}無需當值。')
