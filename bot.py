@@ -45,9 +45,9 @@ def set_absent(class_:str, grp_no:str, month:int, day:int,mode:str):
 		if int(grp_no) < 1 or int(grp_no) > 15:
 			print('組別只可以係 0<x<16。')
 			return
-		if datetime.datetime.strptime(date, '%d/%m/%Y').date() < datetime.datetime.now().date():
-			print('日期唔可以係過去。')
-			return
+		# if datetime.datetime.strptime(date, '%d/%m/%Y').date() < datetime.datetime.now().date():
+		# 	print('日期唔可以係過去。')
+		# 	return
 		if datetime.datetime.strptime(date, '%d/%m/%Y').date() > datetime.datetime(2025, 6, 30).date():
 			print ('日期超過全日制學期上課日終止點。')
 			return
@@ -153,10 +153,10 @@ async def on_ready():
 	
 
 
-@bot.event
-async def on_message(message):
-	await bot.process_commands(message)
-	print(f'{message.author} sent a message at {time.ctime()}: {message.content}')
+# @bot.event
+# async def on_message(message):
+# 	await bot.process_commands(message)
+# 	# print(f'{message.author} sent a message at {time.ctime()}: {message.content}')
 
 @bot.command()
 async def cog_load(ctx, cog_name = None):
@@ -259,25 +259,53 @@ async def reset_timetable(ctx):
 					st_day, st_month = map(int, start.split('/'))
 					en_day, en_month = map(int, end.split('/'))
 					# print(st_day, st_month, en_day, en_month)
-					datetime_start = datetime.date(2024, st_month, st_day) if st_month > 6 else datetime.date(2025, st_month, st_day)
-					datetime_end = datetime.date(2024, en_month, en_day) if en_month > 6 else datetime.date(2025, en_month, en_day)
+					datetime_start = datetime.date(2024, st_month, st_day) if st_month > 8 else datetime.date(2025, st_month, st_day)
+					datetime_end = datetime.date(2024, en_month, en_day) if en_month > 8 else datetime.date(2025, en_month, en_day)
 					return list(rrule(freq=DAILY, until=datetime_end, dtstart=datetime_start))
 				else:
-					return parse(date_str,parserinfo=parserinfo_)
+					return datetime.datetime(2024, int(date_str.split('/')[1]), int(date_str.split('/')[0])) if int(date_str.split('/')[1]) > 8 else datetime.datetime(2025, int(date_str.split('/')[1]), int(date_str.split('/')[0]))
 			calendar_ = calendar.Calendar()
-			holidays = '18/9,27/9,1/10,4/10,11/10,16/10-24/10,4/11,19/11,20/11,2/12,20/12,22/12-2/1,6/1,20/1,27/1-5/2,19/3,4/4-24/4,1/5,5/5,13/5,26/5,5/6,23/6'.split(',')
+			holidays = '18/9,27/9,1/10,11/10,18/10-23/10,4/11,19/11,20/11,2/12,20/12-2/1,6/1-20/1,27/1-5/2,3/3,19/3,4/4,9/4,10/4-24/4,1/5,5/5,13/5,5/6-23/6,7/1,14/7-31/7'.split(',')
 			holidays = [parse_date(x) for x in holidays]
-			holidays = list(itertools.chain([a for x in holidays if isinstance(x, list) for a in x], [x for x in holidays if not isinstance(x, list)]))
+			# print(holidays)
+			holidays = sorted(list(itertools.chain([a for x in holidays if isinstance(x, list) for a in x], [x for x in holidays if not isinstance(x, list)])),key=lambda x: x.date())
+			# print(holidays)
+			*fridays, = 'ABC----BABCDAAB--C--A-ABCDCCAB---AABCDD---AAB--'
 			# print(holidays)
 			A = []
 			B = []
 			C = []
 			D = []
+			# count = 0
+			# for holida in holidays:
+			# 	print(holida.weekday(), holida, count, fridays[count])
+			# 	if holida.weekday() == 4:
+			# 		fridays[count] = ''
+			# 		count += 1
+			# print(fridays)
 			count = 0
-			dates_range = list(rrule(freq=DAILY, until=datetime.datetime(2025, 6, 30), dtstart=datetime.datetime(2024, 9, 4)))
-			dates_range = [x for x in dates_range if x.weekday() < 5 and x not in holidays]
+			dates_range = list(rrule(freq=DAILY, until=datetime.datetime(2025, 7, 18), dtstart=datetime.datetime(2024, 9, 4)))
+			dates_range = [x for x in dates_range if x.weekday() < 5]
+			# print(dates_range)
+			holidays_set = set(holidays)
+
 			for date in dates_range:
-				if date.weekday() == 0:
+				if date.weekday() == 4:
+					# print(date,date.weekday(),count,fridays[count])
+					group_to_append = fridays[count]
+					# print(group_to_append)
+					if group_to_append == 'A':
+						A.append(date)
+					elif group_to_append == 'B':
+						B.append(date)
+					elif group_to_append == 'C':
+						C.append(date)
+					elif group_to_append == 'D':
+						D.append(date)
+					count += 1
+				elif date in holidays_set:
+					continue
+				elif date.weekday() == 0:
 					A.append(date)
 				elif date.weekday() == 1:
 					B.append(date)
@@ -285,20 +313,11 @@ async def reset_timetable(ctx):
 					C.append(date)
 				elif date.weekday() == 3:
 					D.append(date)
-				elif date.weekday() == 4:
-					if count % 4 == 0:
-						A.append(date)
-					elif count % 4 == 1:
-						B.append(date)
-					elif count % 4 == 2:
-						C.append(date)
-					elif count % 4 == 3:
-						D.append(date)
-					count += 1
 			# print(A, B, C, D)
 			temparray = []
-			count = 0
+			
 			for i in range(4):
+				count = 0
 				csv_file = open(f'5{chr(65+i)}.csv', 'w',newline='')
 				csv_writer = csv.writer(csv_file)
 				csv_writer.writerow(['Date','Groups'])

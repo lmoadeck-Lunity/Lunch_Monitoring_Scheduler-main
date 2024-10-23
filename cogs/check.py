@@ -266,10 +266,10 @@ class checkschedule(commands.Cog):
 		if int(grp_no) < 1 or int(grp_no) > 15:
 			await interaction.followup.send('組別只可以係 0<x<16。')
 			return
-		if datetime.datetime.strptime(date, '%d/%m/%Y').date() < datetime.datetime.now().date():
-			await interaction.followup.send('日期唔可以係過去。')
-			return
-		if datetime.datetime.strptime(date, '%d/%m/%Y').date() > datetime.datetime(2025, 6, 30).date():
+		# if datetime.datetime.strptime(date, '%d/%m/%Y').date() < datetime.datetime.now().date():
+		# 	await interaction.followup.send('日期唔可以係過去。')
+			# return
+		if datetime.datetime.strptime(date, '%d/%m/%Y').date() > datetime.datetime(2025, 7, 20).date():
 			await interaction.followup.send('日期超過全日制學期上課日終止點。')
 			return
 		if datetime.datetime.strptime(date, '%d/%m/%Y').date().weekday() > 4:
@@ -372,9 +372,9 @@ class checkschedule(commands.Cog):
 		await interaction.response.defer()
 		total_string = ''
 		found = False
-		if datetime.datetime.strptime(date, '%d/%m/%Y').date() < datetime.datetime.now().date():
-			await interaction.followup.send('無法查詢過去日期。')
-			return
+		# if datetime.datetime.strptime(date, '%d/%m/%Y').date() < datetime.datetime.now().date():
+		# 	await interaction.followup.send('無法查詢過去日期。')
+		# 	return
 		for i in ['A','B','C','D']:
 			file = open(f'5{i}.csv', 'r')
 			csv_reader = csv.reader(file)
