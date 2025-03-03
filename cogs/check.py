@@ -53,7 +53,10 @@ class checkschedule(commands.Cog):
 		self.daily_reminder.start()
 		self.after_lunchtime_cleanup.start()
 		
-
+	defIntents = discord.Intents.default()
+	defIntents.members = True
+	defIntents.message_content = True
+	bot = commands.Bot(command_prefix=';', intents=defIntents)
 	time_to_repeat = [datetime.time(hour=7, minute=10, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))), datetime.time(hour=7, minute=30, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8))), datetime.time(hour=7, minute=50, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))]
 	after_lunchtime = datetime.time(hour=13, minute=0, second=0, tzinfo=datetime.timezone(datetime.timedelta(hours=8)))
 	@tasks.loop(time=time_to_repeat)
@@ -112,10 +115,10 @@ class checkschedule(commands.Cog):
 			channel = self.bot.get_channel(channel_map[i])
 			async for line in channel.history(limit=None):
 				await line.delete()
-			with open(FILENAME) as f:
-				data = f.read().splitlines() # Read csv file
-			with open(FILENAME, 'w') as g:
-				g.write('\n'.join([data[:DELETE_LINE_NUMBER]] + data[DELETE_LINE_NUMBER+1:])) # Write to file without the first line
+			# with open(FILENAME) as f:
+			# 	data = f.read().splitlines() # Read csv file
+			# with open(FILENAME, 'w') as g:
+			# 	g.write('\n'.join([data[:DELETE_LINE_NUMBER]] + data[DELETE_LINE_NUMBER+1:])) # Write to file without the first line
 		return
 
 
@@ -123,8 +126,9 @@ class checkschedule(commands.Cog):
 
 
 
-	@app_commands.command(name='re-announce', description='重新發佈今日值日。')
-	@app_commands.describe()
+	# @app_commands.command(name='re-announce', description='重新發佈今日值日。')
+	# @app_commands.describe()
+	@bot.command()
 	# @app_commands.AppCommandPermissions(targ)
 	async def re_announce(self, interaction: discord.Interaction):
 		if datetime.datetime.now().weekday() == 6 or datetime.datetime.now().weekday() == 5:
@@ -342,6 +346,73 @@ class checkschedule(commands.Cog):
 			await interaction.followup.send(f'成功更新時間表。')
 			return
 		
+
+	@app_commands.command(name='set_day_list', description='設定指定日期值日。')
+	@app_commands.describe(class_='輸入班別，如5A請輸入A',grp_list='輸入組別列表 如 "1,2,3,4,5,6,7,8"',month='輸入月份，如9月請輸入9',day='輸入日期，如17號請輸入17')
+	async def set_day_list(self, interaction: discord.Interaction, class_:str, grp_list:str, month:int, day:int):
+		ls=grp_list.split(',')
+		ls = [int(x) for x in ls]
+		date = f'{str(day).zfill(2)}/{str(month).zfill(2)}/{2024 if month > 6 else 2025}'
+		if class_ not in ['A','B','C','D']:
+			await interaction.followup.send('班別只可以係 A, B, C, D。')
+			return
+		if int(grp_list) < 1 or int(grp_list) > 15:
+			await interaction.followup.send('組別只可以係 0<x<16。')
+			return
+		
+		if datetime.datetime.strptime(date, '%d/%m/%Y').date() < datetime.datetime.now().date():
+			await interaction.followup.send('日期唔可以係過去。')
+			return
+		if datetime.datetime.strptime(date, '%d/%m/%Y').date() > datetime.datetime(2025, 7, 20).date():
+			await interaction.followup.send('日期超過全日制學期上課日終止點。')
+			return
+		if datetime.datetime.strptime(date, '%d/%m/%Y').date().weekday() > 4:
+			await interaction.followup.send('日期唔可以係星期六或星期日。')
+			return
+		if len(ls) > max_gp[class_]:
+			await interaction.followup.send('組別唔可以超過班別組別數量。')
+			return
+		file = open(f'5{class_}.csv', 'r')
+		csv_reader = list(csv.reader(file))
+		# found1 = False
+		runtimes = 0
+		moved = False
+		for row in csv_reader:
+			if row[0] == 'Date':
+				continue
+			runtimes += 1
+			list22 = map(int,row[1].strip('][').split(', '))
+			list22 = list(list22)
+			if row[0] == date:
+				# found1 = True
+				list22 = ls
+				csv_reader[runtimes][1] = list22
+				moved = True
+				continue	
+
+				
+			if moved:
+				list22 = [x+1 if x < max_gp[class_] else 1 for x in list22]
+				csv_reader[runtimes][1] = list22
+				success = True
+		# if not found1:
+		# 	await interaction.followup.send(f'該日組別{grp_no}無需當值。')
+		# 	return
+		if success:
+			await interaction.followup.send(f'已經設定5{class_}班的{grp_list}組別在{date}值日，並且已將所有組別編號移向後一格。')
+
+		file.close()
+		file = open(f'5{class_}.csv', 'w',newline='')
+		csv_writer = csv.writer(file)
+		for row in csv_reader:
+			csv_writer.writerow(row)
+		file.close()
+		await interaction.followup.send(f'成功更新時間表。')
+		return
+
+
+
+
 	@app_commands.command(name='check_today', description='查詢今日值日。')
 	@app_commands.describe()
 	async def check_today(self, interaction: discord.Interaction):
